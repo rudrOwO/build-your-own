@@ -12,32 +12,34 @@ import (
 
 // Usage: your_sqlite3.sh sample.db .dbinfo
 func main() {
-	databaseFilePath := os.Args[1]
-	command := os.Args[2]
+	dbFilePath := os.Args[1]
+	userCommand := os.Args[2]
 
-	switch command {
+	dbFile, err := os.Open(dbFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbHeader := make([]byte, 100)
+
+	_, err = dbFile.Read(dbHeader)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	switch userCommand {
 	case ".dbinfo":
-		databaseFile, err := os.Open(databaseFilePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		header := make([]byte, 100)
-
-		_, err = databaseFile.Read(header)
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		var pageSize uint16
-		if err := binary.Read(bytes.NewReader(header[16:18]), binary.BigEndian, &pageSize); err != nil {
+		// var numberOfTables uint16
+
+		if err := binary.Read(bytes.NewReader(dbHeader[16:18]), binary.BigEndian, &pageSize); err != nil {
 			fmt.Println("Failed to read integer:", err)
 			return
 		}
 
 		fmt.Printf("database page size: %v", pageSize)
 	default:
-		fmt.Println("Unknown command", command)
+		fmt.Println("Unknown command", userCommand)
 		os.Exit(1)
 	}
 }
