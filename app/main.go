@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"log"
@@ -12,14 +11,11 @@ import (
 
 // Usage: your_sqlite3.sh sample.db .dbinfo
 func main() {
-	dbFilePath := os.Args[1]
-	userCommand := os.Args[2]
-
-	dbFile, err := os.Open(dbFilePath)
+	dbFile, err := os.Open(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	userCommand := os.Args[2]
 	dbHeader := make([]byte, 100)
 
 	_, err = dbFile.Read(dbHeader)
@@ -32,10 +28,7 @@ func main() {
 		var pageSize uint16
 		// var numberOfTables uint16
 
-		if err := binary.Read(bytes.NewReader(dbHeader[16:18]), binary.BigEndian, &pageSize); err != nil {
-			fmt.Println("Failed to read integer:", err)
-			return
-		}
+		pageSize = binary.BigEndian.Uint16(dbHeader[16:18])
 
 		fmt.Printf("database page size: %v", pageSize)
 	default:
