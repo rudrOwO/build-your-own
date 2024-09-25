@@ -23,18 +23,18 @@ type interiorHeader struct {
 	rightmostPointer uint32
 }
 
-type tableInteriorCell struct {
+type interiorTableCell struct {
 	leftChildPointer uint32
 	rowId            uint64
 }
 
-type tableInteriorPage struct {
+type interiorTablePage struct {
 	header       interiorHeader
 	cellPointers []uint16
-	cells        []tableInteriorCell
+	cells        []interiorTableCell
 }
 
-type tableLeafPage struct {
+type leafTablePage struct {
 	header       leafHeader
 	cellPointers []uint16
 	// TODO Add Leaf Cells later
