@@ -12,7 +12,7 @@ const (
 	LEAF_TABLE_PAGE_TYPE     = 0x0d
 )
 
-// TODO Process the ignore fields from the docs when writing a reader/parser
+// ! Process the ignore fields from the docs when writing a reader/parser
 type leafHeader struct {
 	pageType   uint8
 	cellsCount uint16
@@ -23,5 +23,19 @@ type interiorHeader struct {
 	rightmostPointer uint32
 }
 
-// ? Make 4 types of cells
-// TODO Make 4 pages in combination of the headers and cell arrays
+type tableInteriorCell struct {
+	leftChildPointer uint32
+	rowId            uint64
+}
+
+type tableInteriorPage struct {
+	header       interiorHeader
+	cellPointers []uint16
+	cells        []tableInteriorCell
+}
+
+type tableLeafPage struct {
+	header       leafHeader
+	cellPointers []uint16
+	// TODO Add Leaf Cells later
+}
