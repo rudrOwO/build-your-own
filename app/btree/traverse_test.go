@@ -1,6 +1,9 @@
 package btree
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestGetRootPageOffset(t *testing.T) {
 	schemaRootOffset := getRootPageOffset("sqlite_schema")
@@ -10,4 +13,22 @@ func TestGetRootPageOffset(t *testing.T) {
 	offset found: %d
 	`, schemaRootOffset)
 	}
+}
+
+func TestLoadAllLeafTablePages(t *testing.T) {
+	dbFile, err := os.Open("../../superheroes.db")
+	if err != nil {
+		t.Errorf(`Error Opening db file`)
+	}
+	defer dbFile.Close()
+
+	testChannel := make(chan LeafTablePage, 1)
+	go LoadAllLeafTablePages("superheroes", dbFile, testChannel)
+
+	count := uint16(0)
+	for c := range testChannel {
+		count += c.header.cellsCount
+	}
+
+	t.Logf("\n%+v\n", count)
 }

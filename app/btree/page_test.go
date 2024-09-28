@@ -12,11 +12,17 @@ func TestLoadPage(t *testing.T) {
 	}
 	defer dbFile.Close()
 
-	l := new(interiorTablePage)
-	err = l.loadPageFromFile(dbFile, 4096)
+	fileBuffer := make([]byte, PAGE_SIZE)
+	_, err = dbFile.Seek(4096, 0)
 	if err != nil {
-		t.Errorf(`Error Loading Page`)
+		t.Errorf(`Error Reading File`)
+	}
+	_, err = dbFile.Read(fileBuffer)
+	if err != nil {
+		t.Errorf(`Error Reading File`)
 	}
 
+	l := new(interiorTablePage)
+	l.loadPageFromBuffer(fileBuffer)
 	t.Logf("\n%+v\n", *l)
 }

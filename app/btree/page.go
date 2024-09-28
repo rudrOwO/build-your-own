@@ -1,8 +1,10 @@
+// * Implemented using https://saveriomiroddi.github.io/SQLIte-database-file-format-diagrams/
 package btree
 
 import (
 	"encoding/binary"
-	"os"
+
+	u "github/com/codecrafters-io/sqlite-starter-go/app/utils"
 )
 
 const (
@@ -44,49 +46,34 @@ type LeafTablePage struct {
 	// TODO Add Leaf Cells later
 }
 
-func (l *LeafTablePage) loadPageFromFile(dbFile *os.File, fileOffset int64) error {
-	fileBuffer := make([]byte, PAGE_SIZE)
-	_, err := dbFile.Seek(fileOffset, 0)
-	if err != nil {
-		return err
-	}
-	_, err = dbFile.Read(fileBuffer)
-	if err != nil {
-		return err
-	}
-
+func (l *LeafTablePage) loadPageFromBuffer(fileBuffer []byte) {
 	l.header.pageType = fileBuffer[0]
 	// Bytes ignored => [1:3]
 	l.header.cellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
+
 	// TODO load Cells
 
-	return nil
 }
 
-func (l *interiorTablePage) loadPageFromFile(dbFile *os.File, fileOffset int64) error {
-	fileBuffer := make([]byte, PAGE_SIZE)
-	_, err := dbFile.Seek(fileOffset, 0)
-	if err != nil {
-		return err
-	}
-	_, err = dbFile.Read(fileBuffer)
-	if err != nil {
-		return err
-	}
-
+func (l *interiorTablePage) loadPageFromBuffer(fileBuffer []byte) {
 	l.header.pageType = fileBuffer[0]
 	// Bytes ignored => [1:3]
 	l.header.cellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
 	// Bytes ignored => [5:8]
 	l.header.rightmostPointer = binary.BigEndian.Uint32(fileBuffer[8:12])
+
 	l.cellPointers = make([]uint16, l.header.cellsCount)
+	l.cells = make([]interiorTableCell, l.header.cellsCount)
 
-	for i, ci := 0, 12; i < int(l.header.cellsCount); {
-		l.cellPointers[i] = binary.BigEndian.Uint16(fileBuffer[ci : ci+2])
-		// TODO Load cell
+	for i, j := 0, 12; i < int(l.header.cellsCount); {
+		l.cellPointers[i] = binary.BigEndian.Uint16(fileBuffer[j : j+2])
+		// Load cell at i
+		{
+			ci := l.cellPointers[i]
+			l.cells[i].leftChildPointer = binary.BigEndian.Uint32(fileBuffer[ci : ci+4])
+			l.cells[i].rowId, _ = u.ReadVarInt(fileBuffer[ci+4:])
+		}
 		i += 1
-		ci += 2
+		j += 2
 	}
-
-	return nil
 }
