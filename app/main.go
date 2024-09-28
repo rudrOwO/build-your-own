@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
 	"os"
+
+	u "github/com/codecrafters-io/sqlite-starter-go/app/utils"
 	// Available if you need it!
 	// "github.com/xwb1989/sqlparser"
 )
@@ -12,16 +13,13 @@ import (
 // Usage: your_sqlite3.sh sample.db .dbinfo
 func main() {
 	dbFile, err := os.Open(os.Args[1])
-	if err != nil {
-		log.Fatal(err)
-	}
+	u.HandleError(err)
+	defer dbFile.Close()
+
 	userCommand := os.Args[2]
 	dbHeader := make([]byte, 100)
-
 	_, err = dbFile.Read(dbHeader)
-	if err != nil {
-		log.Fatal(err)
-	}
+	u.HandleError(err)
 
 	switch userCommand {
 	case ".dbinfo":

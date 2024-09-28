@@ -1,5 +1,7 @@
 package utils
 
+import "log"
+
 func ReadVarInt(buf []byte) (uint64, int) {
 	var result uint64
 	for i, b := range buf {
@@ -18,4 +20,10 @@ func BytesToInt(bytes []byte) uint64 {
 		result = (result << 8) | uint64(b)
 	}
 	return result
+}
+
+func HandleError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
