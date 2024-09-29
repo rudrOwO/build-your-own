@@ -23,11 +23,11 @@ func TestLoadAllLeafTablePages(t *testing.T) {
 	defer dbFile.Close()
 
 	testChannel := make(chan LeafTablePage, 1)
-	go LoadAllLeafTablePages("superheroes", dbFile, testChannel)
+	go LoadAllLeafTablePages("sqlite_schema", dbFile, testChannel)
 
 	count := uint16(0)
 	for c := range testChannel {
-		count += c.header.cellsCount
+		count += c.Header.CellsCount
 	}
 
 	t.Logf("\n%+v\n", count)

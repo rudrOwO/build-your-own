@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github/com/codecrafters-io/sqlite-starter-go/app/features"
 	u "github/com/codecrafters-io/sqlite-starter-go/app/utils"
 	// Available if you need it!
 	// "github.com/xwb1989/sqlparser"
@@ -23,12 +24,11 @@ func main() {
 
 	switch userCommand {
 	case ".dbinfo":
-		var pageSize uint16
-		// var numberOfTables uint16
+		pageSize := binary.BigEndian.Uint16(dbHeader[16:18])
+		numberOfTables := features.CountRows("sqlite_schema", dbFile)
 
-		pageSize = binary.BigEndian.Uint16(dbHeader[16:18])
-
-		fmt.Printf("database page size: %v", pageSize)
+		fmt.Printf("database page size: %v\n", pageSize)
+		fmt.Printf("number of tables: %v", numberOfTables)
 	default:
 		fmt.Println("Unknown command", userCommand)
 		os.Exit(1)
