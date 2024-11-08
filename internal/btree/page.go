@@ -4,7 +4,7 @@ package btree
 import (
 	"encoding/binary"
 
-	u "github/com/codecrafters-io/sqlite-starter-go/app/utils"
+	"github.com/rudrowo/sqlite/internal/datatypes"
 )
 
 const (
@@ -18,44 +18,55 @@ const (
 	LEAF_TABLE_PAGE_TYPE     = 0x0d
 )
 
-type LeafHeader struct {
-	PageType   uint8
-	CellsCount uint16
-}
+// Headers
+type (
+	LeafHeader struct {
+		PageType   uint8
+		CellsCount uint16
+	}
+	interiorHeader struct {
+		LeafHeader
+		rightmostPointer uint32
+	}
+	recordHeader struct {
+		columnTypes []uint64
+		headerSize  uint64
+	}
+)
 
-type interiorHeader struct {
-	LeafHeader
-	rightmostPointer uint32
-}
+// Cells
+type (
+	interiorTableCell struct {
+		leftChildPointer uint32
+		rowId            uint64
+	}
+	leafTableCell struct {
+		// TODO
+	}
+)
 
-type interiorTableCell struct {
-	leftChildPointer uint32
-	rowId            uint64
-}
+// Pages
+type (
+	interiorTablePage struct {
+		cellPointers []uint16
+		cells        []interiorTableCell
+		header       interiorHeader
+	}
+	LeafTablePage struct {
+		CellPointers []uint16
+		Header       LeafHeader
+	}
+)
 
-// A Page here is a Node in the B-Tree.
-type interiorTablePage struct {
-	header       interiorHeader
-	cellPointers []uint16
-	cells        []interiorTableCell
-}
-
-type LeafTablePage struct {
-	Header       LeafHeader
-	CellPointers []uint16
-	// TODO Add Leaf Cells later
-}
-
-func (l *LeafTablePage) loadPageFromBuffer(fileBuffer []byte) {
+func (l *LeafTablePage) loadFromBuffer(fileBuffer []byte) {
 	l.Header.PageType = fileBuffer[0]
 	// Bytes ignored => [1:3]
 	l.Header.CellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
 
 	// TODO load Cells
-
 }
 
-func (l *interiorTablePage) loadPageFromBuffer(fileBuffer []byte) {
+func (l *interiorTablePage) loadFromBuffer(fileBuffer []byte) {
 	l.header.PageType = fileBuffer[0]
 	// Bytes ignored => [1:3]
 	l.header.CellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
@@ -71,7 +82,7 @@ func (l *interiorTablePage) loadPageFromBuffer(fileBuffer []byte) {
 		{
 			ci := l.cellPointers[i]
 			l.cells[i].leftChildPointer = binary.BigEndian.Uint32(fileBuffer[ci : ci+4])
-			l.cells[i].rowId, _ = u.ReadVarInt(fileBuffer[ci+4:])
+			l.cells[i].rowId, _ = datatypes.VARINT(fileBuffer[ci+4:])
 		}
 		i += 1
 		j += 2
