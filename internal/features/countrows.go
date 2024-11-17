@@ -8,8 +8,8 @@ func CountRows(tableName string) uint16 {
 	go btree.LoadAllLeafTablePages(tableName, dbFile, leafPagesChannel)
 
 	cellsCount := uint16(0)
-	for c := range leafPagesChannel {
-		cellsCount += c.Header.CellsCount
+	for page := range leafPagesChannel {
+		cellsCount += page.Header.CellCount
 	}
 
 	return cellsCount

@@ -21,12 +21,12 @@ const (
 // Headers
 type (
 	leafHeader struct {
-		PageType   uint8
-		CellsCount uint16
+		PageType  uint8
+		CellCount uint16
 	}
 	interiorHeader struct {
 		pageType         uint8
-		cellsCount       uint16
+		cellCount        uint16
 		rightmostPointer uint32
 	}
 	recordHeader struct {
@@ -68,14 +68,14 @@ type (
 func (l *interiorTablePage) loadFromBuffer(fileBuffer []byte) {
 	l.header.pageType = fileBuffer[0]
 	// Bytes ignored => [1:3]
-	l.header.cellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
+	l.header.cellCount = binary.BigEndian.Uint16(fileBuffer[3:5])
 	// Bytes ignored => [5:8]
 	l.header.rightmostPointer = binary.BigEndian.Uint32(fileBuffer[8:12])
 
-	l.cellPointers = make([]uint16, l.header.cellsCount)
-	l.cells = make([]interiorTableCell, l.header.cellsCount)
+	l.cellPointers = make([]uint16, l.header.cellCount)
+	l.cells = make([]interiorTableCell, l.header.cellCount)
 
-	for i, j := 0, 12; i < int(l.header.cellsCount); {
+	for i, j := 0, 12; i < int(l.header.cellCount); {
 		l.cellPointers[i] = binary.BigEndian.Uint16(fileBuffer[j : j+2])
 		// Load cell at i
 		{
@@ -91,9 +91,11 @@ func (l *interiorTablePage) loadFromBuffer(fileBuffer []byte) {
 func (l *LeafTablePage) loadFromBuffer(fileBuffer []byte) {
 	l.Header.PageType = fileBuffer[0]
 	// Bytes ignored => [1:3]
-	l.Header.CellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
+	l.Header.CellCount = binary.BigEndian.Uint16(fileBuffer[3:5])
 
-	for i, j := 0, 12; i < int(l.Header.CellsCount); {
+	l.CellPointers = make([]uint16, l.Header.CellCount)
+
+	for i, j := 0, 12; i < int(l.Header.CellCount); {
 
 		i += 1
 		j += 2

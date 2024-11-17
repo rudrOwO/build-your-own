@@ -27,7 +27,7 @@ func TestLoadAllLeafTablePages(t *testing.T) {
 
 	count := uint16(0)
 	for c := range testChannel {
-		count += c.Header.CellsCount
+		count += c.Header.CellCount
 	}
 
 	t.Logf("\n%+v\n", count)
