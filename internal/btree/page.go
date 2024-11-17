@@ -20,17 +20,18 @@ const (
 
 // Headers
 type (
-	LeafHeader struct {
+	leafHeader struct {
 		PageType   uint8
 		CellsCount uint16
 	}
 	interiorHeader struct {
-		LeafHeader
+		pageType         uint8
+		cellsCount       uint16
 		rightmostPointer uint32
 	}
 	recordHeader struct {
-		columnTypes []uint64
-		headerSize  uint64
+		ColumnTypes []uint64
+		HeaderSize  uint64
 	}
 )
 
@@ -41,7 +42,12 @@ type (
 		rowId            uint64
 	}
 	leafTableCell struct {
-		// TODO
+		Payload struct {
+			RecordBody []byte
+			recordHeader
+		}
+		RowId       uint64
+		PayloadSize uint64
 	}
 )
 
@@ -54,29 +60,22 @@ type (
 	}
 	LeafTablePage struct {
 		CellPointers []uint16
-		Header       LeafHeader
+		Cells        []leafTableCell
+		Header       leafHeader
 	}
 )
 
-func (l *LeafTablePage) loadFromBuffer(fileBuffer []byte) {
-	l.Header.PageType = fileBuffer[0]
-	// Bytes ignored => [1:3]
-	l.Header.CellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
-
-	// TODO load Cells
-}
-
 func (l *interiorTablePage) loadFromBuffer(fileBuffer []byte) {
-	l.header.PageType = fileBuffer[0]
+	l.header.pageType = fileBuffer[0]
 	// Bytes ignored => [1:3]
-	l.header.CellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
+	l.header.cellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
 	// Bytes ignored => [5:8]
 	l.header.rightmostPointer = binary.BigEndian.Uint32(fileBuffer[8:12])
 
-	l.cellPointers = make([]uint16, l.header.CellsCount)
-	l.cells = make([]interiorTableCell, l.header.CellsCount)
+	l.cellPointers = make([]uint16, l.header.cellsCount)
+	l.cells = make([]interiorTableCell, l.header.cellsCount)
 
-	for i, j := 0, 12; i < int(l.header.CellsCount); {
+	for i, j := 0, 12; i < int(l.header.cellsCount); {
 		l.cellPointers[i] = binary.BigEndian.Uint16(fileBuffer[j : j+2])
 		// Load cell at i
 		{
@@ -84,6 +83,18 @@ func (l *interiorTablePage) loadFromBuffer(fileBuffer []byte) {
 			l.cells[i].leftChildPointer = binary.BigEndian.Uint32(fileBuffer[ci : ci+4])
 			l.cells[i].rowId, _ = datatypes.VARINT(fileBuffer[ci+4:])
 		}
+		i += 1
+		j += 2
+	}
+}
+
+func (l *LeafTablePage) loadFromBuffer(fileBuffer []byte) {
+	l.Header.PageType = fileBuffer[0]
+	// Bytes ignored => [1:3]
+	l.Header.CellsCount = binary.BigEndian.Uint16(fileBuffer[3:5])
+
+	for i, j := 0, 12; i < int(l.Header.CellsCount); {
+
 		i += 1
 		j += 2
 	}
