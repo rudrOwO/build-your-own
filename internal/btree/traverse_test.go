@@ -8,7 +8,7 @@ import (
 func TestGetRootPageOffset(t *testing.T) {
 	schemaRootOffset := getRootPageOffset("sqlite_schema")
 
-	if schemaRootOffset != 100 {
+	if schemaRootOffset != 0 {
 		t.Errorf(`Test Failed for TestGetRootPageOffset
 	offset found: %d
 	`, schemaRootOffset)

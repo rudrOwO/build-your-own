@@ -1,15 +1,20 @@
-// * Implemented using https://saveriomiroddi.github.io/SQLIte-database-file-format-diagrams/
+/*
+Based on
+https://www.sqlite.org/fileformat.html#record_format
+https://saveriomiroddi.github.io/SQLIte-database-file-format-diagrams/
+*/
 package btree
 
 import (
 	"encoding/binary"
 
-	"github.com/rudrowo/sqlite/internal/datatypes"
+	"github.com/rudrowo/sqlite/internal/dataformat"
 )
 
 const (
 	PAGE_SIZE                 = 4096
-	SQLITE_SCHEMA_ROOT_OFFSET = 100
+	SQLITE3_HEADER_SIZE       = 100
+	SQLITE_SCHEMA_ROOT_OFFSET = 0
 
 	INTERIOR_INDEX_PAGE_TYPE = 0x02
 	LEAF_INDEX_PAGE_TYPE     = 0x0a
@@ -30,8 +35,8 @@ type (
 		rightmostPointer uint32
 	}
 	recordHeader struct {
-		ColumnTypes []uint64
-		HeaderSize  uint64
+		ColumnTypes []uint64 // []varint
+		HeaderSize  uint64   // varint
 	}
 )
 
@@ -39,15 +44,14 @@ type (
 type (
 	interiorTableCell struct {
 		leftChildPointer uint32
-		rowId            uint64
+		rowId            uint64 // varint
 	}
 	leafTableCell struct {
 		Payload struct {
 			RecordBody []byte
 			recordHeader
 		}
-		RowId       uint64
-		PayloadSize uint64
+		RowId uint64 // varint
 	}
 )
 
@@ -65,39 +69,82 @@ type (
 	}
 )
 
-func (l *interiorTablePage) loadFromBuffer(fileBuffer []byte) {
-	l.header.pageType = fileBuffer[0]
-	// Bytes ignored => [1:3]
-	l.header.cellCount = binary.BigEndian.Uint16(fileBuffer[3:5])
-	// Bytes ignored => [5:8]
-	l.header.rightmostPointer = binary.BigEndian.Uint32(fileBuffer[8:12])
+func (page *interiorTablePage) loadFromBuffer(fileBuffer []byte, isSchemaPage bool) {
+	var bi int // bi is the buffer index
+	if isSchemaPage {
+		bi = SQLITE3_HEADER_SIZE
+	} else {
+		bi = 0
+	}
 
-	l.cellPointers = make([]uint16, l.header.cellCount)
-	l.cells = make([]interiorTableCell, l.header.cellCount)
+	page.header.pageType = fileBuffer[bi]
+	bi += 3
+	page.header.cellCount = binary.BigEndian.Uint16(fileBuffer[bi : bi+2])
+	bi += 5
+	page.header.rightmostPointer = binary.BigEndian.Uint32(fileBuffer[bi : bi+4])
+	bi += 4
 
-	for i, j := 0, 12; i < int(l.header.cellCount); {
-		l.cellPointers[i] = binary.BigEndian.Uint16(fileBuffer[j : j+2])
-		// Load cell at i
-		{
-			ci := l.cellPointers[i]
-			l.cells[i].leftChildPointer = binary.BigEndian.Uint32(fileBuffer[ci : ci+4])
-			l.cells[i].rowId, _ = datatypes.VARINT(fileBuffer[ci+4:])
-		}
-		i += 1
-		j += 2
+	page.cellPointers = make([]uint16, page.header.cellCount)
+	for i := range page.cellPointers {
+		page.cellPointers[i] = binary.BigEndian.Uint16(fileBuffer[bi : bi+2])
+		bi += 2
+	}
+
+	page.cells = make([]interiorTableCell, page.header.cellCount)
+	for i := range page.cells {
+		bi := page.cellPointers[i]
+		cell := &(page.cells[i])
+
+		cell.leftChildPointer = binary.BigEndian.Uint32(fileBuffer[bi : bi+4])
+		bi += 4
+		cell.rowId, _ = dataformat.DeserializeVarint(fileBuffer[bi:])
 	}
 }
 
-func (l *LeafTablePage) loadFromBuffer(fileBuffer []byte) {
-	l.Header.PageType = fileBuffer[0]
-	// Bytes ignored => [1:3]
-	l.Header.CellCount = binary.BigEndian.Uint16(fileBuffer[3:5])
+func (page *LeafTablePage) loadFromBuffer(fileBuffer []byte, isSchemaPage bool) {
+	var bi int // bi is the buffer index
+	if isSchemaPage {
+		bi = SQLITE3_HEADER_SIZE
+	} else {
+		bi = 0
+	}
 
-	l.CellPointers = make([]uint16, l.Header.CellCount)
+	page.Header.PageType = fileBuffer[bi]
+	bi += 3
+	page.Header.CellCount = binary.BigEndian.Uint16(fileBuffer[bi : bi+2])
+	bi += 5
 
-	for i, j := 0, 12; i < int(l.Header.CellCount); {
+	page.CellPointers = make([]uint16, page.Header.CellCount)
+	for i := range page.CellPointers {
+		page.CellPointers[i] = binary.BigEndian.Uint16(fileBuffer[bi : bi+2])
+		bi += 2
+	}
 
-		i += 1
-		j += 2
+	page.Cells = make([]leafTableCell, page.Header.CellCount)
+	for i := range page.Cells {
+		bi := page.CellPointers[i]
+		cell := &(page.Cells[i])
+
+		payloadSize, bytesRead := dataformat.DeserializeVarint(fileBuffer[bi:])
+		bi += bytesRead
+		cell.RowId, bytesRead = dataformat.DeserializeVarint(fileBuffer[bi:])
+		bi += bytesRead
+
+		payload := fileBuffer[bi : bi+uint16(payloadSize)]
+		headerSize, bytesRead := dataformat.DeserializeVarint(payload)
+		bi = bytesRead // bi is now index of the payload buffer
+
+		columnTypes := make([]uint64, headerSize)
+		columnTypesRead := 0
+		for bi < uint16(headerSize) {
+			columnTypes[columnTypesRead], bytesRead = dataformat.DeserializeVarint(payload[bi:])
+			bi += bytesRead
+			columnTypesRead += 1
+		}
+		cell.Payload.ColumnTypes = make([]uint64, columnTypesRead)
+		copy(cell.Payload.ColumnTypes, columnTypes[0:columnTypesRead]) // Discard excess allocated memory
+
+		cell.Payload.RecordBody = payload[bi:]
+		cell.Payload.HeaderSize = headerSize
 	}
 }

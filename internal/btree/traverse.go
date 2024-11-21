@@ -34,13 +34,24 @@ func loadAllLeafTablePages(rootPageOffset int64, dbFile *os.File, leafTablesChan
 		log.Fatal(err)
 	}
 
-	if fileBuffer[0] == LEAF_TABLE_PAGE_TYPE {
+	var isLeafPage bool
+	var isSchemaPage bool
+
+	if rootPageOffset == 0 {
+		isSchemaPage = true
+		isLeafPage = fileBuffer[SQLITE3_HEADER_SIZE] == LEAF_TABLE_PAGE_TYPE
+	} else {
+		isSchemaPage = false
+		isLeafPage = fileBuffer[0] == LEAF_TABLE_PAGE_TYPE
+	}
+
+	if isLeafPage {
 		leafPage := LeafTablePage{}
-		leafPage.loadFromBuffer(fileBuffer)
+		leafPage.loadFromBuffer(fileBuffer, isSchemaPage)
 		leafTablesChannel <- leafPage
 	} else {
 		interiorPage := interiorTablePage{}
-		interiorPage.loadFromBuffer(fileBuffer)
+		interiorPage.loadFromBuffer(fileBuffer, isSchemaPage)
 
 		loadAllLeafTablePages(int64(interiorPage.header.rightmostPointer-1)*PAGE_SIZE, // * page offsets stored in db are 1 based
 			dbFile, leafTablesChannel)

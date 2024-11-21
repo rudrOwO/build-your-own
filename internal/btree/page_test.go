@@ -6,7 +6,7 @@ import (
 )
 
 func TestLoadPage(t *testing.T) {
-	dbFile, err := os.Open("../../superheroes.db")
+	dbFile, err := os.Open("../../sample.db")
 	if err != nil {
 		t.Errorf(`Error Opening db file`)
 	}
@@ -22,7 +22,7 @@ func TestLoadPage(t *testing.T) {
 		t.Errorf(`Error Reading File`)
 	}
 
-	l := new(interiorTablePage)
-	l.loadFromBuffer(fileBuffer)
-	t.Logf("\n%+v\n", *l)
+	l := LeafTablePage{}
+	l.loadFromBuffer(fileBuffer, false)
+	// t.Logf("\n%+v\n", l)
 }
