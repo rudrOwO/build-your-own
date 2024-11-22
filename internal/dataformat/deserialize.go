@@ -15,6 +15,11 @@ Datatypes correspondence:
 */
 package dataformat
 
+import (
+	"encoding/binary"
+	"math"
+)
+
 type DeserializedTypes interface {
 	int64 | float64 | string
 }
@@ -31,14 +36,17 @@ func DeserializeVarint(bytes []byte) (uint64, uint16) {
 	return result, 0
 }
 
-func DeserializeInteger(bytes []byte) (result uint64) { // FIX  Should be int64
+func DeserializeInteger(bytes []byte) (result int64) {
 	for _, b := range bytes {
-		result = (result << 8) | uint64(b)
+		result = (result << 8) | int64(b)
 	}
 	return result
 }
 
-func DeserializeFloat(bytes []byte) (result float64) {
-	// TODO
-	return result
+func DeserializeFloat(bytes []byte) float64 {
+	return math.Float64frombits(binary.BigEndian.Uint64(bytes))
+}
+
+func DeserializeText(bytes []byte) string {
+	return string(bytes)
 }
