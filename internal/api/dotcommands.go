@@ -1,4 +1,4 @@
-package features
+package api
 
 import (
 	"encoding/binary"

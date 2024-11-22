@@ -1,4 +1,4 @@
-package features
+package api
 
 import (
 	btree "github.com/rudrowo/sqlite/internal/btree"

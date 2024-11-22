@@ -16,7 +16,7 @@ func TestGetRootPageOffset(t *testing.T) {
 }
 
 func TestLoadAllLeafTablePages(t *testing.T) {
-	dbFile, err := os.Open("../../superheroes.db")
+	dbFile, err := os.Open("../../sample.db")
 	if err != nil {
 		t.Errorf(`Error Opening db file`)
 	}
