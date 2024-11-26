@@ -18,7 +18,6 @@ func getRootPageOffset(tableName string) int64 {
 	if tableName == "sqlite_schema" || tableName == "sqlite_master" {
 		return SQLITE_SCHEMA_ROOT_OFFSET
 	} else {
-		// TODO parse sqlite_schema table and find root offset
 		return 0
 	}
 }

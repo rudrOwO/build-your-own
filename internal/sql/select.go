@@ -11,23 +11,28 @@ import (
 const (
 	SELECT_STATEMENT_REGEX = `(?i)^SELECT\s+(.*?)\s+FROM\s+(\w+)\s*(?:\s+WHERE\s+(.*))?$`
 	WHERE_CLAUSE_REGEX     = `([a-zA-Z_][a-zA-Z0-9_]*)\s*(=|!=|<=|>=|<|>)\s*'?(\w+)'?\s*`
+	COUNT_REGEX            = `(?i)COUNT\(\*\)`
 )
 
 var (
-	whereClauseRegex     = regexp.MustCompile(WHERE_CLAUSE_REGEX)
-	selectStatementRegex = regexp.MustCompile(SELECT_STATEMENT_REGEX)
-	commaSeparatorRegex  = regexp.MustCompile(`\s*,\s*`)
+	whereClauseRegex      = regexp.MustCompile(WHERE_CLAUSE_REGEX)
+	selectStatementRegex  = regexp.MustCompile(SELECT_STATEMENT_REGEX)
+	commaSeparatorRegex   = regexp.MustCompile(`\s*,\s*`)
+	countExpresseionRegex = regexp.MustCompile(COUNT_REGEX)
 )
 
 // BUG  Fails if where clause LHS is not present in select cluase
 func ExecuteSelect(query string) string {
 	matches := selectStatementRegex.FindStringSubmatch(query)
 
-	// TODO  Add escape hatch for COUNT(*)
-	_ = matches[1]            // The second capture group (columns part)
-	tableName := matches[2]   // The third capture group (table name)
-	whereClause := matches[3] // The fourth capture group (where clause)
 	columnTokens := commaSeparatorRegex.Split(matches[1], -1)
+	tableName := matches[2]
+	whereClause := matches[3]
+
+	if countExpresseionRegex.MatchString(matches[1]) {
+		rowCount := api.CountRows(tableName)
+		return strconv.FormatInt(int64(rowCount), 10)
+	}
 
 	schemaSql := getTableSchema(tableName)
 	parsedSchema := parseSchema(schemaSql)
