@@ -13,7 +13,7 @@ func TestLoadAllLeafTablePages(t *testing.T) {
 	defer dbFile.Close()
 
 	testChannel := make(chan LeafTablePage, 1)
-	go LoadAllLeafTablePages(0, dbFile, testChannel)
+	go LoadAllLeafTablePages(0, dbFile, testChannel, true)
 
 	count := uint16(0)
 	for c := range testChannel {

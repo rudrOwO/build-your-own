@@ -3,14 +3,9 @@ package api
 import (
 	"log"
 	"os"
-
-	btree "github.com/rudrowo/sqlite/internal/btree"
 )
 
-var (
-	leafPagesChannel chan btree.LeafTablePage
-	dbFile           *os.File
-)
+var dbFile *os.File
 
 func Init(fileName string) *os.File {
 	var err error
@@ -19,6 +14,5 @@ func Init(fileName string) *os.File {
 		log.Fatal(err)
 	}
 
-	leafPagesChannel = make(chan btree.LeafTablePage, 1)
 	return dbFile
 }

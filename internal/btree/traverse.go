@@ -10,7 +10,7 @@ Traverse a table btree and enumerate list of
 starting poitions of leaf pages
 */
 
-func LoadAllLeafTablePages(rootPageOffset int64, dbFile *os.File, leafPagesChannel chan<- LeafTablePage) {
+func LoadAllLeafTablePages(rootPageOffset int64, dbFile *os.File, leafPagesChannel chan<- LeafTablePage, recursiveRoot bool) {
 	fileBuffer := make([]byte, PAGE_SIZE)
 	_, err := dbFile.Seek(rootPageOffset, 0)
 	if err != nil {
@@ -41,12 +41,14 @@ func LoadAllLeafTablePages(rootPageOffset int64, dbFile *os.File, leafPagesChann
 		interiorPage.loadFromBuffer(fileBuffer, isSchemaPage)
 
 		LoadAllLeafTablePages(int64(interiorPage.header.rightmostPointer-1)*PAGE_SIZE, // * page offsets stored in db are 1 based
-			dbFile, leafPagesChannel)
+			dbFile, leafPagesChannel, false)
 
 		for _, c := range interiorPage.cells {
 			LoadAllLeafTablePages(int64(c.leftChildPointer-1)*PAGE_SIZE, // * page offsets stored in db are 1 based
-				dbFile, leafPagesChannel)
+				dbFile, leafPagesChannel, false)
 		}
 	}
-	close(leafPagesChannel)
+	if recursiveRoot {
+		close(leafPagesChannel)
+	}
 }

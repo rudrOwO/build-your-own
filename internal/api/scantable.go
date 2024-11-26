@@ -10,7 +10,8 @@ import (
 )
 
 func ScanTable(columnIndices []int, rowLength int, rootPageOffset int64, filter func(row []any) bool) string {
-	go btree.LoadAllLeafTablePages(rootPageOffset, dbFile, leafPagesChannel)
+	leafPagesChannel := make(chan btree.LeafTablePage, 1)
+	go btree.LoadAllLeafTablePages(rootPageOffset, dbFile, leafPagesChannel, true)
 
 	if !sort.IntsAreSorted(columnIndices) {
 		sort.Ints(columnIndices)
