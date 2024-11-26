@@ -48,9 +48,7 @@ func parseSchema(schemaSql string) []parsedColumn {
 }
 
 func getTableSchema(tableName string) string {
-	// TODO
-	// ExecuteSelect("SELECT sql FROM sqlite_schema WHERE name = " + tableName)
-	// ParseSchema(schema)
+	// TODO ExecuteSelect("SELECT sql FROM sqlite_schema WHERE name = " + tableName)
 
 	if tableName == "sqlite_schema" || tableName == "sqlite_master" {
 		return SQLITE_MASTER_SCHEMA

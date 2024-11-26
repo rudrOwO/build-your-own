@@ -1,10 +1,10 @@
 package sql
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 
+	"github.com/rudrowo/sqlite/internal/api"
 	"github.com/rudrowo/sqlite/internal/dataformat"
 )
 
@@ -19,23 +19,31 @@ var (
 	commaSeparatorRegex  = regexp.MustCompile(`\s*,\s*`)
 )
 
-func ExecuteSelect(query string) {
+func ExecuteSelect(query string) string {
 	matches := selectStatementRegex.FindStringSubmatch(query)
 
-	_ = matches[0]          // The whole query
-	_ = matches[1]          // The second capture group (columns part)
-	tableName := matches[2] // The third capture group (table name)
-	_ = matches[3]          // The fourth capture group (where clause)
+	_ = matches[1]            // The second capture group (columns part)
+	tableName := matches[2]   // The third capture group (table name)
+	whereClause := matches[3] // The fourth capture group (where clause)
+	columnTokens := commaSeparatorRegex.Split(matches[1], -1)
 
-	fmt.Println(tableName)
+	schemaSql := getTableSchema(tableName)
+	parsedSchema := parseSchema(schemaSql)
+	columnIndices := make([]int, len(columnTokens))
 
-	// columnNames
-	_ = commaSeparatorRegex.Split(matches[1], -1)
+	for i, columnName := range columnTokens {
+		for _, parsedColumn := range parsedSchema {
+			if columnName == parsedColumn.columnName {
+				columnIndices[i] = parsedColumn.columnIndex
+			}
+		}
+	}
 
-	// Call ScanTable() with column indices and filter callback
+	filter := parseWhereClause(whereClause, parsedSchema)
+	return api.ScanTable(columnIndices, tableName, filter)
 }
 
-func parseWhereClause(whereClause string, tableName string) func(row []any) bool {
+func parseWhereClause(whereClause string, parsedSchema []parsedColumn) func(row []any) bool {
 	if whereClause == "" {
 		return func(row []any) bool {
 			return true
@@ -72,13 +80,11 @@ func parseWhereClause(whereClause string, tableName string) func(row []any) bool
 		stringPrimitive = strictlyLessThanPrimitive[string]
 	}
 
-	schemaSql := getTableSchema(tableName)
-	parsedSchema := parseSchema(schemaSql)
 	var targetColumn parsedColumn
 
-	for _, c := range parsedSchema {
-		if lhsToken == c.columnName {
-			targetColumn = c
+	for _, parsedColumn := range parsedSchema {
+		if lhsToken == parsedColumn.columnName {
+			targetColumn = parsedColumn
 			break
 		}
 	}
@@ -110,7 +116,7 @@ func parseWhereClause(whereClause string, tableName string) func(row []any) bool
 			return stringPrimitive(row[i].(string), rhsArg)
 		}
 	default:
-		panic("Failed to parse table schema for " + tableName)
+		panic("Malformed schema passed to where clause")
 	}
 }
 
