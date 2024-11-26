@@ -12,9 +12,9 @@ var (
 	dbFile           *os.File
 )
 
-func Init() *os.File {
+func Init(fileName string) *os.File {
 	var err error
-	dbFile, err = os.Open(os.Args[1])
+	dbFile, err = os.Open(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}

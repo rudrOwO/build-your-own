@@ -1,6 +1,10 @@
 package sql
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/rudrowo/sqlite/internal/api"
+)
 
 func TestParseWhereClause(t *testing.T) {
 	whereClause := "rootpage = 69"
@@ -14,6 +18,8 @@ func TestParseWhereClause(t *testing.T) {
 }
 
 func TestExecuteSelect(t *testing.T) {
-	t.Log(ExecuteSelect("SELECT sql FROM sqlite_schema"))
-	t.Log(ExecuteSelect("SELECT name, rootpage FROM sqlite_schema WHERE tbl_name = 'apples'"))
+	dbFile := api.Init("../../sample.db")
+	defer dbFile.Close()
+	// t.Log(ExecuteSelect("SELECT name, rootpage FROM sqlite_schema"))
+	t.Log(ExecuteSelect("SELECT tbl_name FROM sqlite_schema WHERE tbl_name != 'sqlite_sequence'"))
 }

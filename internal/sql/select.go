@@ -19,9 +19,11 @@ var (
 	commaSeparatorRegex  = regexp.MustCompile(`\s*,\s*`)
 )
 
+// BUG  Fails if where clause LHS is not present in select cluase
 func ExecuteSelect(query string) string {
 	matches := selectStatementRegex.FindStringSubmatch(query)
 
+	// TODO  Add escape hatch for COUNT(*)
 	_ = matches[1]            // The second capture group (columns part)
 	tableName := matches[2]   // The third capture group (table name)
 	whereClause := matches[3] // The fourth capture group (where clause)
@@ -40,7 +42,7 @@ func ExecuteSelect(query string) string {
 	}
 
 	filter := parseWhereClause(whereClause, parsedSchema)
-	return api.ScanTable(columnIndices, tableName, filter)
+	return api.ScanTable(columnIndices, len(parsedSchema), tableName, filter)
 }
 
 func parseWhereClause(whereClause string, parsedSchema []parsedColumn) func(row []any) bool {

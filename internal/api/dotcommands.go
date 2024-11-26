@@ -15,8 +15,3 @@ func ReadPageSize() uint16 {
 	pageSize := binary.BigEndian.Uint16(dbHeader[16:18])
 	return pageSize
 }
-
-// TODO  Parse sqlite_schema and read table names
-func ReadTableNames() []string {
-	return []string{}
-}
