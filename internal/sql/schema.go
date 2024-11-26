@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -48,11 +49,11 @@ func parseSchema(schemaSql string) []parsedColumn {
 }
 
 func getTableSchema(tableName string) string {
-	// TODO ExecuteSelect("SELECT sql FROM sqlite_schema WHERE name = " + tableName)
-
 	if tableName == "sqlite_schema" || tableName == "sqlite_master" {
 		return SQLITE_MASTER_SCHEMA
+	} else {
+		schemaQuery := fmt.Sprintf("SELECT sql FROM sqlite_schema WHERE name = '%s'", tableName)
+		queryResult := ExecuteSelect(schemaQuery)
+		return queryResult[:len(queryResult)-1] // trimming the last \n
 	}
-
-	return ""
 }

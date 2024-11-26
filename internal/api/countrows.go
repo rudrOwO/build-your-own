@@ -4,8 +4,8 @@ import (
 	btree "github.com/rudrowo/sqlite/internal/btree"
 )
 
-func CountRows(tableName string) uint16 {
-	go btree.LoadAllLeafTablePages(tableName, dbFile, leafPagesChannel)
+func CountRows(rootPageOffset int64) uint16 {
+	go btree.LoadAllLeafTablePages(rootPageOffset, dbFile, leafPagesChannel)
 
 	cellsCount := uint16(0)
 	for page := range leafPagesChannel {

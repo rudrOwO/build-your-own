@@ -9,8 +9,8 @@ import (
 	"github.com/rudrowo/sqlite/internal/dataformat"
 )
 
-func ScanTable(columnIndices []int, rowLength int, tableName string, filter func(row []any) bool) string {
-	go btree.LoadAllLeafTablePages(tableName, dbFile, leafPagesChannel)
+func ScanTable(columnIndices []int, rowLength int, rootPageOffset int64, filter func(row []any) bool) string {
+	go btree.LoadAllLeafTablePages(rootPageOffset, dbFile, leafPagesChannel)
 
 	if !sort.IntsAreSorted(columnIndices) {
 		sort.Ints(columnIndices)
@@ -22,30 +22,35 @@ func ScanTable(columnIndices []int, rowLength int, tableName string, filter func
 		for _, cell := range page.Cells { // each cell corresponds to a row
 			row := make([]any, rowLength)
 			j, k := 0, 0
+			firstPrintInRow := true
 
 			for i, columnType := range cell.Payload.ColumnTypes {
 				recordBody := cell.Payload.RecordBody
 				contentSize := int(dataformat.GetContentSize(columnType))
 
 				// Lazy serializer: serialze only the selected columns
-				if i == columnIndices[j] {
-					var content any
+				var content any
 
-					switch {
-					case columnType == 0: // NULL
-						content = nil
-					case columnType >= 1 && columnType <= 6: // int
-						content = dataformat.DeserializeInteger(recordBody[k : k+contentSize])
-					case columnType == 7: // float
-						content = dataformat.DeserializeFloat(recordBody[k : k+contentSize])
-					default: // string
-						content = string(recordBody[k : k+contentSize])
-					}
+				switch {
+				case columnType == 0: // NULL
+					content = nil
+				case columnType >= 1 && columnType <= 6: // int
+					content = dataformat.DeserializeInteger(recordBody[k : k+contentSize])
+				case columnType == 7: // float
+					content = dataformat.DeserializeFloat(recordBody[k : k+contentSize])
+				default: // string
+					content = string(recordBody[k : k+contentSize])
+				}
 
-					row[i] = content
-					j += 1
+				row[i] = content
+				k += contentSize
 
+				if j < len(columnIndices) && i == columnIndices[j] {
 					if filter(row) {
+						if !firstPrintInRow {
+							result.WriteString("|")
+						}
+
 						switch content := row[i].(type) {
 						case int64:
 							result.WriteString(strconv.FormatInt(content, 10))
@@ -54,19 +59,15 @@ func ScanTable(columnIndices []int, rowLength int, tableName string, filter func
 						case string: // string
 							result.WriteString(content)
 						}
-						result.WriteString("\n")
+						firstPrintInRow = false
 					}
-
-				} else {
-					row[i] = nil
+					j += 1
 				}
+			}
+			firstPrintInRow = true
 
-				k += contentSize
-
-				if len(columnIndices) == j {
-					break
-				}
-
+			if filter(row) {
+				result.WriteString("\n")
 			}
 		}
 	}

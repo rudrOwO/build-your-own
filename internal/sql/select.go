@@ -28,10 +28,11 @@ func ExecuteSelect(query string) string {
 	columnTokens := commaSeparatorRegex.Split(matches[1], -1)
 	tableName := matches[2]
 	whereClause := matches[3]
+	rootPageOffset := GetRootPageOFFSET(tableName)
 
 	if countExpresseionRegex.MatchString(matches[1]) {
-		rowCount := api.CountRows(tableName)
-		return strconv.FormatInt(int64(rowCount), 10)
+		rowCount := api.CountRows(rootPageOffset)
+		return strconv.FormatInt(int64(rowCount), 10) + "\n"
 	}
 
 	schemaSql := getTableSchema(tableName)
@@ -47,7 +48,7 @@ func ExecuteSelect(query string) string {
 	}
 
 	filter := parseWhereClause(whereClause, parsedSchema)
-	return api.ScanTable(columnIndices, len(parsedSchema), tableName, filter)
+	return api.ScanTable(columnIndices, len(parsedSchema), rootPageOffset, filter)
 }
 
 func parseWhereClause(whereClause string, parsedSchema []parsedColumn) func(row []any) bool {

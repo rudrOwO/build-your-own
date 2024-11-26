@@ -18,9 +18,9 @@ func TestParseWhereClause(t *testing.T) {
 }
 
 func TestExecuteSelect(t *testing.T) {
-	dbFile := api.Init("../../companies.db")
+	dbFile := api.Init("../../sample.db")
 	defer dbFile.Close()
 	// t.Log(ExecuteSelect("SELECT name, rootpage FROM sqlite_schema"))
 	// t.Log(ExecuteSelect("SELECT tbl_name FROM sqlite_schema WHERE tbl_name != 'sqlite_sequence'"))
-	t.Log(ExecuteSelect("SELECT COUNT(*) FROM companies"))
+	t.Log(ExecuteSelect("SELECT COUNT(*) FROM apples"))
 }
