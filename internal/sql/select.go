@@ -2,7 +2,9 @@ package sql
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/rudrowo/sqlite/internal/api"
 	"github.com/rudrowo/sqlite/internal/dataformat"
@@ -21,7 +23,6 @@ var (
 	countExpresseionRegex = regexp.MustCompile(COUNT_REGEX)
 )
 
-// BUG  Fails if where clause LHS is not present in select cluase
 func ExecuteSelect(query string) string {
 	matches := selectStatementRegex.FindStringSubmatch(query)
 
@@ -37,25 +38,59 @@ func ExecuteSelect(query string) string {
 
 	schemaSql := getTableSchema(tableName)
 	parsedSchema := parseSchema(schemaSql)
-	columnIndices := make([]int, len(columnTokens))
+	selectedColumnIndices := make([]int, len(columnTokens))
 
 	for i, columnName := range columnTokens {
 		for _, parsedColumn := range parsedSchema {
 			if columnName == parsedColumn.columnName {
-				columnIndices[i] = parsedColumn.columnIndex
+				selectedColumnIndices[i] = parsedColumn.columnIndex
 			}
 		}
 	}
 
-	filter := parseWhereClause(whereClause, parsedSchema)
-	return api.ScanTable(columnIndices, len(parsedSchema), rootPageOffset, filter)
+	filter, lhsIndex := parseWhereClause(whereClause, parsedSchema)
+
+	columnIndicesToSerialize := make([]int, len(selectedColumnIndices))
+	copy(columnIndicesToSerialize, selectedColumnIndices)
+	if lhsIndex >= 0 && !slices.Contains(columnIndicesToSerialize, lhsIndex) {
+		columnIndicesToSerialize = append(columnIndicesToSerialize, lhsIndex)
+	}
+	slices.Sort(columnIndicesToSerialize)
+
+	rowsChannel := make(chan []any, 5)
+	api.ScanTable(columnIndicesToSerialize, len(parsedSchema), rootPageOffset, filter, rowsChannel)
+
+	var result strings.Builder
+
+	for row := range rowsChannel {
+		firstPrintInRow := true
+
+		for _, si := range selectedColumnIndices {
+			if !firstPrintInRow {
+				result.WriteByte('|')
+			}
+
+			switch content := row[si].(type) {
+			case int64:
+				result.WriteString(strconv.FormatInt(content, 10))
+			case float64:
+				result.WriteString(strconv.FormatFloat(content, 'f', 2, 64))
+			case string: // string
+				result.WriteString(content)
+			}
+
+			firstPrintInRow = false
+		}
+		result.WriteByte('\n')
+	}
+	return result.String()
 }
 
-func parseWhereClause(whereClause string, parsedSchema []parsedColumn) func(row []any) bool {
+func parseWhereClause(whereClause string, parsedSchema []parsedColumn) (func(row []any) bool, int) {
 	if whereClause == "" {
 		return func(row []any) bool {
 			return true
-		}
+		}, -1
 	}
 
 	tokens := whereClauseRegex.FindStringSubmatch(whereClause)
@@ -97,7 +132,7 @@ func parseWhereClause(whereClause string, parsedSchema []parsedColumn) func(row 
 		}
 	}
 
-	i := targetColumn.columnIndex
+	lhsIndex := targetColumn.columnIndex
 	switch targetColumn.columnType {
 	case "integer":
 		rhsArg, err := strconv.ParseInt(rhsToken, 10, 64)
@@ -106,8 +141,8 @@ func parseWhereClause(whereClause string, parsedSchema []parsedColumn) func(row 
 		}
 
 		return func(row []any) bool {
-			return intPrimitive(row[i].(int64), rhsArg)
-		}
+			return intPrimitive(row[lhsIndex].(int64), rhsArg)
+		}, lhsIndex
 	case "real":
 		rhsArg, err := strconv.ParseFloat(rhsToken, 64)
 		if err != nil {
@@ -115,14 +150,14 @@ func parseWhereClause(whereClause string, parsedSchema []parsedColumn) func(row 
 		}
 
 		return func(row []any) bool {
-			return floatPrimitive(row[i].(float64), rhsArg)
-		}
+			return floatPrimitive(row[lhsIndex].(float64), rhsArg)
+		}, lhsIndex
 	case "text":
 		rhsArg := rhsToken
 
 		return func(row []any) bool {
-			return stringPrimitive(row[i].(string), rhsArg)
-		}
+			return stringPrimitive(row[lhsIndex].(string), rhsArg)
+		}, lhsIndex
 	default:
 		panic("Malformed schema passed to where clause")
 	}
