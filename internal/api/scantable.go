@@ -23,6 +23,8 @@ func ScanTable(columnIndicesToSerialize []int, rowLength int, rootPageOffset int
 					var content any
 
 					switch {
+					case columnType == 0 && i == 0: // RowId
+						content = int64(cell.RowId)
 					case columnType == 0: // NULL
 						content = nil
 					case columnType >= 1 && columnType <= 6: // int

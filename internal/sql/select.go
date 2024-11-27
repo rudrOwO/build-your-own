@@ -70,13 +70,16 @@ func ExecuteSelect(query string) string {
 				result.WriteByte('|')
 			}
 
-			switch content := row[si].(type) {
-			case int64:
-				result.WriteString(strconv.FormatInt(content, 10))
-			case float64:
-				result.WriteString(strconv.FormatFloat(content, 'f', 2, 64))
-			case string: // string
-				result.WriteString(content)
+			content := row[si]
+			if content != nil {
+				switch c := row[si].(type) {
+				case int64:
+					result.WriteString(strconv.FormatInt(c, 10))
+				case float64:
+					result.WriteString(strconv.FormatFloat(c, 'f', 2, 64))
+				case string: // string
+					result.WriteString(c)
+				}
 			}
 
 			firstPrintInRow = false
@@ -141,6 +144,9 @@ func parseWhereClause(whereClause string, parsedSchema []parsedColumn) (func(row
 		}
 
 		return func(row []any) bool {
+			if row[lhsIndex] == nil {
+				return false
+			}
 			return intPrimitive(row[lhsIndex].(int64), rhsArg)
 		}, lhsIndex
 	case "real":
@@ -150,12 +156,18 @@ func parseWhereClause(whereClause string, parsedSchema []parsedColumn) (func(row
 		}
 
 		return func(row []any) bool {
+			if row[lhsIndex] == nil {
+				return false
+			}
 			return floatPrimitive(row[lhsIndex].(float64), rhsArg)
 		}, lhsIndex
 	case "text":
 		rhsArg := rhsToken
 
 		return func(row []any) bool {
+			if row[lhsIndex] == nil {
+				return false
+			}
 			return stringPrimitive(row[lhsIndex].(string), rhsArg)
 		}, lhsIndex
 	default:

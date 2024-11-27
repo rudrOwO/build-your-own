@@ -21,5 +21,5 @@ func TestExecuteSelect(t *testing.T) {
 	dbFile := api.Init("../../superheroes.db")
 	defer dbFile.Close()
 	// t.Log(ExecuteSelect("SELECT rootpage FROM sqlite_schema WHERE tbl_name = 'superheroes'"))
-	t.Log(ExecuteSelect("SELECT name FROM superheroes WHERE hair_color = 'Reddish Brown Hair'"))
+	t.Log(ExecuteSelect("SELECT id, name FROM superheroes WHERE hair_color = 'Reddish Brown Hair'"))
 }
