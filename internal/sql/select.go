@@ -57,7 +57,7 @@ func ExecuteSelect(query string) string {
 	}
 	slices.Sort(columnIndicesToSerialize)
 
-	rowsChannel := make(chan []any, 5)
+	rowsChannel := make(chan []any, 100)
 	api.ScanTable(columnIndicesToSerialize, len(parsedSchema), rootPageOffset, filter, rowsChannel)
 
 	var result strings.Builder

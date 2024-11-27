@@ -5,7 +5,7 @@ import (
 )
 
 func CountRows(rootPageOffset int64) uint16 {
-	leafPagesChannel := make(chan btree.LeafTablePage, 1)
+	leafPagesChannel := make(chan btree.LeafTablePage, 100)
 	go btree.LoadAllLeafTablePages(rootPageOffset, dbFile, leafPagesChannel, true)
 
 	cellsCount := uint16(0)
