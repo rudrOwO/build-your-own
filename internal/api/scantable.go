@@ -6,7 +6,7 @@ import (
 )
 
 func ScanTable(columnIndicesToSerialize []int, rowLength int, rootPageOffset int64, filter func(row []any) bool, rowsChannel chan<- []any) {
-	leafPagesChannel := make(chan btree.LeafTablePage, 100)
+	leafPagesChannel := make(chan btree.LeafTablePage, BTREE_BUFFER_SIZE)
 	go btree.LoadAllLeafTablePages(rootPageOffset, dbFile, leafPagesChannel, true)
 
 	for page := range leafPagesChannel {

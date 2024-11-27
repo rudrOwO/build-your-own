@@ -19,7 +19,7 @@ func main() {
 	switch userCommand {
 	case ".dbinfo":
 		fmt.Printf("database page size: %v\n", btree.PAGE_SIZE)
-		fmt.Printf("number of tables: %v", api.CountRows(sql.GetRootPageOFFSET("sqlite_schema")))
+		fmt.Printf("number of tables: %v", sql.ExecuteSelect("SELECT COUNT(*) FROM sqlite_schema"))
 	case ".tables":
 		fmt.Print(sql.ExecuteSelect("SELECT tbl_name FROM sqlite_schema WHERE tbl_name != 'sqlite_sequence'"))
 	default:
