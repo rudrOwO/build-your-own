@@ -3,6 +3,8 @@ package api
 import (
 	"log"
 	"os"
+
+	"github.com/rudrowo/sqlite/internal/btree"
 )
 
 var dbFile *os.File
@@ -14,5 +16,6 @@ func Init(fileName string) *os.File {
 		log.Fatal(err)
 	}
 
+	btree.PAGE_SIZE = int64(ReadPageSize())
 	return dbFile
 }

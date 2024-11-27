@@ -11,9 +11,9 @@ import (
 	"github.com/rudrowo/sqlite/internal/dataformat"
 )
 
-const (
-	PAGE_SIZE = 4096
+var PAGE_SIZE = int64(4096)
 
+const (
 	INTERIOR_INDEX_PAGE_TYPE = 0x02
 	LEAF_INDEX_PAGE_TYPE     = 0x0a
 
