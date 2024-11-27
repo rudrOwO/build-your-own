@@ -12,7 +12,7 @@ import (
 
 const (
 	SELECT_STATEMENT_REGEX = `(?i)^SELECT\s+(.*?)\s+FROM\s+(\w+)\s*(?:\s+WHERE\s+(.*))?$`
-	WHERE_CLAUSE_REGEX     = `([a-zA-Z_][a-zA-Z0-9_]*)\s*(=|!=|<=|>=|<|>)\s*'?(\w+)'?\s*`
+	WHERE_CLAUSE_REGEX     = `([a-zA-Z_][a-zA-Z0-9_]*)\s*(=|!=|<=|>=|<|>)\s*'?([^']+)'?\s*`
 	COUNT_REGEX            = `(?i)COUNT\(\*\)`
 )
 
