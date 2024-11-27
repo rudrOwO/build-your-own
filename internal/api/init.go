@@ -16,6 +16,6 @@ func Init(fileName string) *os.File {
 		log.Fatal(err)
 	}
 
-	btree.PAGE_SIZE = int64(ReadPageSize())
+	btree.PAGE_SIZE = int64(readPageSize())
 	return dbFile
 }

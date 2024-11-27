@@ -7,7 +7,7 @@ import (
 	btree "github.com/rudrowo/sqlite/internal/btree"
 )
 
-func ReadPageSize() uint16 {
+func readPageSize() uint16 {
 	dbHeader := make([]byte, btree.SQLITE3_HEADER_SIZE)
 	_, err := dbFile.Read(dbHeader)
 	if err != nil {
