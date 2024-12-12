@@ -13,7 +13,7 @@ func GetRootPageOFFSET(tableName string) int64 {
 	if tableName == "sqlite_schema" || tableName == "sqlite_master" {
 		return SQLITE_SCHEMA_ROOT_OFFSET
 	} else {
-		query := fmt.Sprintf(`SELECT rootpage FROM sqlite_schema WHERE tbl_name = '%s'`, tableName)
+		query := fmt.Sprintf(`SELECT rootpage FROM sqlite_schema WHERE name = '%s'`, tableName)
 		rootPageStr := ExecuteSelect(query)
 		rootPage, err := strconv.ParseInt(rootPageStr[:len(rootPageStr)-1], 10, 64) // trimming the last \n
 		if err != nil {

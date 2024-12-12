@@ -11,5 +11,5 @@ func TestGetRootPageOffset(t *testing.T) {
 	defer dbFile.Close()
 
 	// t.Log(getRootPageOffset("sqlite_schema"))
-	t.Log(GetRootPageOFFSET("'oranges'"))
+	t.Log(GetRootPageOFFSET("oranges"))
 }
