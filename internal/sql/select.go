@@ -124,6 +124,10 @@ func parseWhereClause(whereClause string, parsedSchema []parsedColumn) (func(row
 		intPrimitive = strictlyLessThanPrimitive[int64]
 		floatPrimitive = strictlyLessThanPrimitive[float64]
 		stringPrimitive = strictlyLessThanPrimitive[string]
+	case "<=":
+		intPrimitive = lessThanOrEqualToPrimitive[int64]
+		floatPrimitive = lessThanOrEqualToPrimitive[float64]
+		stringPrimitive = lessThanOrEqualToPrimitive[string]
 	}
 
 	var targetColumn parsedColumn
