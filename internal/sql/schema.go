@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	SCHEMA_REGEX = `.+?\(([^\)]+)`
-	COLUMN_REGEX = `(?i)(\w+)\s+(NULL|INTEGER|REAL|TEXT|BLOB)`
+	SCHEMA_REGEX = `(?s).+?\(([^\)]+)`
+	COLUMN_REGEX = `(?i)(?:\s*(?:(\w+))|(\".+?\"))\s*(NULL|INTEGER|REAL|TEXT|BLOB)`
 )
 
 var (
@@ -38,9 +38,17 @@ func parseSchema(schemaSql string) []parsedColumn {
 
 	for i, column := range columns {
 		matches := columnRegex.FindStringSubmatch(column)
+		var columnName string
+
+		if matches[1] == "" {
+			columnName = matches[2]
+		} else {
+			columnName = matches[1]
+		}
+
 		parsedSchema[i] = parsedColumn{
-			columnName:  matches[1],
-			columnType:  strings.ToLower(matches[2]),
+			columnName:  columnName,
+			columnType:  strings.ToLower(matches[3]),
 			columnIndex: i,
 		}
 	}
